@@ -1,79 +1,97 @@
 //player modul
+var allLogs;
 var events = require('events');
 var util = require('util');
 util.inherits(Player, events.EventEmitter);
 
+// Class
 function Player(name){
 	this.name = name;
 	this.points = 0;
-	this.games = 0;
+	this.games = 1;
 	this.logs = 'All Logs:\n';
+	this.startHasPrint = false;
+	this.win = false;
 	events.EventEmitter.call(this);
 }
-
+// Class functions
 Player.prototype.increment = function(){
 	// (ex: 0,15,30,40,win_one_game)
-	var changeTo = 0;
+	if (this.startHasPrint==false && this.points==0 && this.games==1){
+		this.logs+= '---  Start Game'+this.games+'  ---\n';
+		this.startHasPrint=true;
+	}	
+
 	switch (this.points){
-		case 0: changeTo = 15;
+		case 0: this.points = 15;
 			break;
-		case 15: changeTo = 30;
+		case 15: this.points = 30;
 			break;
-		case 30: changeTo = 40;
+		case 30: this.points = 40;
 			break;
-		case 40: changeTo = 0;
+		case 40:
+			this.logs+= '---  End Game '+this.games+' ---\n';
+			if (this.games == 11 && this.points==40){
+				//player win 11 games
+				this.win = true;
+				this.logs+= '\n'+this.name+ ' is the WINNER!!\n';
+			}else{
+				this.points = 0;
 				this.games++;
-				if (this.games==11){
-					console.log(this.name+ ' is the WINNER!!');
-					this.emit('gamesChange');
-				}
+				this.emit('gamesChange');
+				this.logs+= '---  Start Game'+this.games+'  ---\n';
+			}
 			break;
 	}
-	this.points = changeTo;
-	this.emit('pointsChange');
-	
+	if (this.win == false && this.points!=0 && this.games!=12){
+		this.emit('pointsChange');
+	}  
 }
 Player.prototype.decrement = function(){
-	// (ex: 0,15,30,40,win_one_game)
-	var changeTo = 0;
-	switch (this.points){
-		case 15: changeTo = 0;
-			break;
-		case 30: changeTo = 15;
-			break;
-		case 40: changeTo = 30;
-			break;
+	if (this.points >0){
+		// (ex: 0,15,30,40,win_one_game)
+		var changeTo = 0;
+		switch (this.points){
+			case 15: changeTo = 0;
+				break;
+			case 30: changeTo = 15;
+				break;
+			case 40: changeTo = 30;
+				break;
+		}
+		this.points = changeTo;
+		this.emit('pointsChange');
 	}
-	this.points = changeTo;
-	this.emit('pointsChange');
 }
 Player.prototype.getLogs = function(){
-	this.logs+= 'print logs\n';
+	this.logs+= 'execute print logs\n';
 	return this.logs;
 }
 
-// exports.getLogs = function (){
-// 	return this.logs;
-// };
+// Other functions
+function pointsChange (){
+	this.logs+= '\t|points change to: '+this.points+'\n';
+}
+function gamesChange (){
+	this.logs+= '\t*games change to: '+this.games+'\n\n';
+}
 
-// Create instance and attach callbacks to events --
-var player1 = new Player('yonit');
-player1.on('pointsChange', function(){
-	console.log('points change to: '+this.points+'\n');
-	this.logs+= 'points change to: '+this.points+'\n';
-});
-player1.on('gamesChange', function(){
-	console.log('games change to: '+this.games+'\n');
-	this.logs+= 'games change to: '+this.games+'\n';
-});
+// Export functions
+exports.getLogs = function (){
+	return allLogs;
+};
 
+/* Create instance and attach callbacks to events ***********/
+var pla = new Player('Yonit');
+pla.on('pointsChange', pointsChange);
+pla.on('gamesChange', gamesChange);
 // Test the code
 for (var i=0; i<11; i++){		//win in 11 games
-	player1.increment();		//win point
-	player1.decrement();		//lose point
+	pla.increment();			//win point
+	pla.decrement();			//lose point
 	for (var j=0; j<4; j++){	//win in 4 points
-		player1.increment();
+		pla.increment();
 	}
 }
-res.write('player1:\n' + player.getLogs()+ '\n');
-//console.log(player1.getLogs());
+allLogs = pla.getLogs();
+/***********************************************************/
